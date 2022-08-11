@@ -1,6 +1,8 @@
 package com.bolt.slack;
 
 import com.slack.api.bolt.App;
+import com.slack.api.methods.response.chat.ChatPostMessageResponse;
+import com.slack.api.model.event.ReactionAddedEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import static com.slack.api.model.block.Blocks.*;
@@ -13,7 +15,8 @@ public class SlackApp {
     @Bean
     public App initSlackApp() {
         App app = new App();
-        app.command("/hello", (req, ctx) -> {
+
+       app.command("/hello", (req, ctx) -> {
             return ctx.ack(asBlocks(
                     section(section -> section.text(markdownText(":wave: pong"))),
                     actions(actions -> actions
@@ -22,6 +25,24 @@ public class SlackApp {
                             ))
                     )
             ));
+        });
+        app.command("/cardservice", (req, ctx) -> {
+            return ctx.ack(asBlocks(
+                    section(section -> section.text(markdownText("Hello!! What information you need for Card Services"))),
+                    actions(actions -> actions
+                            .elements(asElements(
+                                    button(b -> b.actionId("Jenkins Job").text(plainText(pt -> pt.text("Jenkins Job"))).value("jenkins")),
+                                    button(b -> b.actionId("SOAP Services").text(plainText(pt -> pt.text("SOAP Services"))).value("soap")),
+                                    button(b -> b.actionId("Rest Services").text(plainText(pt -> pt.text("Rest Services"))).value("rest"))
+                            ))
+                    )
+            ));
+        });
+
+
+        app.message(":wave:", (payload, ctx) -> {
+            ctx.say("Hello, <@" + payload.getEvent().getUser() + ">");
+            return ctx.ack();
         });
 
         return app;
