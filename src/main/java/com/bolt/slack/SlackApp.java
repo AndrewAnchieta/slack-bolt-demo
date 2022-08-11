@@ -28,7 +28,7 @@ public class SlackApp {
         });
         app.command("/cardservice", (req, ctx) -> {
             return ctx.ack(asBlocks(
-                    section(section -> section.text(markdownText("Hello!! What information you need for Card Services"))),
+                    section(section -> section.text(markdownText("Hello :wave: Please click on the below tabs for additional information."))),
                     actions(actions -> actions
                             .elements(asElements(
                                     button(b -> b.actionId("Jenkins Job").text(plainText(pt -> pt.text("Jenkins Job"))).value("jenkins")),
@@ -39,6 +39,19 @@ public class SlackApp {
             ));
         });
 
+        app.event(ReactionAddedEvent.class, (payload, ctx) -> {
+            ReactionAddedEvent event = payload.getEvent();
+            if (event.getReaction().equals("white_check_mark")) {
+                ChatPostMessageResponse message = ctx.client().chatPostMessage(r -> r
+                        .channel(event.getItem().getChannel())
+                        .threadTs(event.getItem().getTs())
+                        .text("<@" + event.getUser() + "> Thank you! We greatly appreciate your efforts :two_hearts:"));
+                if (!message.isOk()) {
+                    ctx.logger.error("chat.postMessage failed: {}", message.getError());
+                }
+            }
+            return ctx.ack();
+        });
 
         app.message(":wave:", (payload, ctx) -> {
             ctx.say("Hello, <@" + payload.getEvent().getUser() + ">");
