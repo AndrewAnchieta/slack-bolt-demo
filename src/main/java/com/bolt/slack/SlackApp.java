@@ -20,7 +20,7 @@ public class SlackApp {
        app.command("/hello", (req, ctx) -> {
            return ctx.ack(":wave: Hello!");
        });
-       
+
         app.command("/cardservice", (req, ctx) -> {
             return ctx.ack(asBlocks(
                     section(section -> section.text(markdownText("Hello :wave: Please click on the below tabs for additional information."))),
