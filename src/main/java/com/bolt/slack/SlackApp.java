@@ -1,6 +1,7 @@
 package com.bolt.slack;
 
 import com.slack.api.bolt.App;
+import com.slack.api.bolt.socket_mode.SocketModeApp;
 import com.slack.api.methods.response.chat.ChatPostMessageResponse;
 import com.slack.api.model.event.ReactionAddedEvent;
 import org.springframework.context.annotation.Bean;
@@ -12,20 +13,14 @@ import static com.slack.api.model.block.element.BlockElements.*;
 
 @Configuration
 public class SlackApp {
-    @Bean
-    public App initSlackApp() {
+   @Bean
+    public App initSlackApp() throws Exception {
         App app = new App();
 
        app.command("/hello", (req, ctx) -> {
-            return ctx.ack(asBlocks(
-                    section(section -> section.text(markdownText(":wave: pong"))),
-                    actions(actions -> actions
-                            .elements(asElements(
-                                    button(b -> b.actionId("ping-again").text(plainText(pt -> pt.text("Ping"))).value("ping"))
-                            ))
-                    )
-            ));
-        });
+           return ctx.ack(":wave: Hello!");
+       });
+       
         app.command("/cardservice", (req, ctx) -> {
             return ctx.ack(asBlocks(
                     section(section -> section.text(markdownText("Hello :wave: Please click on the below tabs for additional information."))),
@@ -35,6 +30,7 @@ public class SlackApp {
                                     button(b -> b.actionId("SOAP Services").text(plainText(pt -> pt.text("SOAP Services"))).value("soap")),
                                     button(b -> b.actionId("Rest Services").text(plainText(pt -> pt.text("Rest Services"))).value("rest"))
                             ))
+
                     )
             ));
         });
@@ -58,8 +54,12 @@ public class SlackApp {
             return ctx.ack();
         });
 
+       new SocketModeApp(app).start();
         return app;
     }
+
 }
+
+
 
 
