@@ -10,10 +10,12 @@ import javax.servlet.annotation.WebServlet;
     needed in case of HTTP over socket mode
  */
 
+/*
 @WebServlet("/slack/events")
 public class SlackAppController extends SlackAppServlet {
     public SlackAppController(App app) {
         super(app);
     }
 }
+*/
 
