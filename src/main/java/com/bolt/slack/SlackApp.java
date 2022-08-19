@@ -1,31 +1,95 @@
 package com.bolt.slack;
 
 import com.slack.api.bolt.App;
+import com.slack.api.bolt.AppConfig;
 import com.slack.api.bolt.socket_mode.SocketModeApp;
 import com.slack.api.methods.response.chat.ChatPostMessageResponse;
 import com.slack.api.model.event.ReactionAddedEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import static com.slack.api.model.block.Blocks.*;
 import static com.slack.api.model.block.composition.BlockCompositions.*;
 import static com.slack.api.model.block.element.BlockElements.*;
 
-
 @Configuration
 public class SlackApp {
    @Bean
     public App initSlackApp() throws Exception {
-        App app = new App();
+       AppConfig appConfig = new AppConfig();
+       appConfig.setRequestVerificationEnabled(false);
+       appConfig.setSslCheckEnabled(false);
+       App app = new App(appConfig);
 
-        app.command("/hi",(req,ctx) -> {
-            return ctx.ack(res -> res.responseType("in_channel").text(":wave: Hello! I am your virtual assistant. How Can I help you today? To see information about card services type /cardservice command."));
+
+       app.event(ReactionAddedEvent.class, (payload, ctx) -> {
+           ReactionAddedEvent event = payload.getEvent();
+           if (event.getReaction().equals("white_check_mark")) {
+               ChatPostMessageResponse message = ctx.client().chatPostMessage(r -> r
+                       .channel(event.getItem().getChannel())
+                       .threadTs(event.getItem().getTs())
+                       .text("<@" + event.getUser() + "> Thank you! We greatly appreciate your efforts :two_hearts:"));
+               if (!message.isOk()) {
+                   ctx.logger.error("chat.postMessage failed: {}", message.getError());
+               }
+           }
+           return ctx.ack();
+       });
+
+       Pattern pattern = Pattern.compile("\\bhello\\b|\\bhi\\b|\\bhey\\b", Pattern.CASE_INSENSITIVE);
+         app.message(pattern, (payload, ctx) -> {
+                ctx.say(asBlocks(
+                         section(section -> section.text(markdownText("Hello! :wave: I am your virtual assistant thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
+                         divider(),
+                         actions(actions -> actions
+                                 .elements(asElements(
+                                         button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
+                                         button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
+
+                                 ))
+                         )
+                 ));
+                
+                 return ctx.ack();
+
+       });
+
+       app.command("/hi",(req,ctx) -> {
+            ctx.respond(res -> res
+                    .responseType("in_channel")
+                    .blocks(asBlocks(
+                            section(section -> section.text(markdownText("Hello "+ req.getPayload().getUserName() + " :wave: Thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
+                            divider(),
+                            actions(actions -> actions
+                                    .elements(asElements(
+                                            button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
+                                            button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
+
+                                    ))
+                            )
+                    )));
+            return ctx.ack();
         });
 
        app.command("/hello", (req, ctx) -> {
-           return ctx.ack(res -> res.responseType("in_channel").text(":wave: Hello! I am your virtual assistant. How Can I help you today? To see information about card services type /cardservice command."));
+           ctx.respond(res -> res
+                   .responseType("in_channel")
+                   .blocks(asBlocks(
+                           section(section -> section.text(markdownText("Hello "+ req.getPayload().getUserName() + " :wave: Thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
+                           divider(),
+                           actions(actions -> actions
+                                   .elements(asElements(
+                                           button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
+                                           button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
 
-
+                                   ))
+                           )
+                   )));
+           return ctx.ack();
        });
 
        app.command("/cardservice", (req, ctx) -> {
@@ -415,31 +479,6 @@ public class SlackApp {
                                )
                        )));
            }
-           return ctx.ack();
-       });
-
-       app.message(":wave:", (payload, ctx) -> {
-           ctx.say("Hello, <@" + payload.getEvent().getUser() + ">");
-           return ctx.ack();
-       });
-
-       app.event(ReactionAddedEvent.class, (payload, ctx) -> {
-           ReactionAddedEvent event = payload.getEvent();
-           if (event.getReaction().equals("white_check_mark")) {
-               ChatPostMessageResponse message = ctx.client().chatPostMessage(r -> r
-                       .channel(event.getItem().getChannel())
-                       .threadTs(event.getItem().getTs())
-                       .text("<@" + event.getUser() + "> Thank you! We greatly appreciate your efforts :two_hearts:"));
-               if (!message.isOk()) {
-                   ctx.logger.error("chat.postMessage failed: {}", message.getError());
-               }
-           }
-           return ctx.ack();
-       });
-
-       // Pattern sdk = Pattern.compile(".*[(Java SDK)|(Bolt)|(Hi)|Hello|(slack\\-java\\-sdk)].*", Pattern.CASE_INSENSITIVE);
-       app.message("hi", (payload, ctx) -> {
-           ctx.say("Hello, <@" + payload.getEvent().getUser() + ">");
            return ctx.ack();
        });
 
