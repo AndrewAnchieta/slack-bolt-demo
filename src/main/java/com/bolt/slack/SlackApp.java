@@ -3,18 +3,17 @@ package com.bolt.slack;
 import com.slack.api.bolt.App;
 import com.slack.api.bolt.AppConfig;
 import com.slack.api.bolt.socket_mode.SocketModeApp;
-import com.slack.api.methods.response.chat.ChatPostMessageResponse;
-import com.slack.api.model.event.ReactionAddedEvent;
+import com.slack.api.model.block.element.StaticSelectElement;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 import static com.slack.api.model.block.Blocks.*;
 import static com.slack.api.model.block.composition.BlockCompositions.*;
 import static com.slack.api.model.block.element.BlockElements.*;
+
+
 
 @Configuration
 public class SlackApp {
@@ -25,57 +24,7 @@ public class SlackApp {
        appConfig.setSslCheckEnabled(false);
        App app = new App(appConfig);
 
-
-       app.event(ReactionAddedEvent.class, (payload, ctx) -> {
-           ReactionAddedEvent event = payload.getEvent();
-           if (event.getReaction().equals("white_check_mark")) {
-               ChatPostMessageResponse message = ctx.client().chatPostMessage(r -> r
-                       .channel(event.getItem().getChannel())
-                       .threadTs(event.getItem().getTs())
-                       .text("<@" + event.getUser() + "> Thank you! We greatly appreciate your efforts :two_hearts:"));
-               if (!message.isOk()) {
-                   ctx.logger.error("chat.postMessage failed: {}", message.getError());
-               }
-           }
-           return ctx.ack();
-       });
-
-       Pattern pattern = Pattern.compile("\\bhello\\b|\\bhi\\b|\\bhey\\b", Pattern.CASE_INSENSITIVE);
-         app.message(pattern, (payload, ctx) -> {
-                ctx.say(asBlocks(
-                         section(section -> section.text(markdownText("Hello! :wave: I am your virtual assistant thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
-                         divider(),
-                         actions(actions -> actions
-                                 .elements(asElements(
-                                         button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
-                                         button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
-
-                                 ))
-                         )
-                 ));
-                
-                 return ctx.ack();
-
-       });
-
-       app.command("/hi",(req,ctx) -> {
-            ctx.respond(res -> res
-                    .responseType("in_channel")
-                    .blocks(asBlocks(
-                            section(section -> section.text(markdownText("Hello "+ req.getPayload().getUserName() + " :wave: Thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
-                            divider(),
-                            actions(actions -> actions
-                                    .elements(asElements(
-                                            button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
-                                            button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
-
-                                    ))
-                            )
-                    )));
-            return ctx.ack();
-        });
-
-       app.command("/hello", (req, ctx) -> {
+       app.command("/service", (req, ctx) -> {
            ctx.respond(res -> res
                    .responseType("in_channel")
                    .blocks(asBlocks(
@@ -92,24 +41,449 @@ public class SlackApp {
            return ctx.ack();
        });
 
-       app.command("/cardservice", (req, ctx) -> {
-            ctx.respond(res -> res
-                    .responseType("in_channel")
-                    .blocks(asBlocks(
-                    section(section -> section.text(markdownText("Hello "+ req.getPayload().getUserName() + " :wave: Thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
-                    divider(),
-                    actions(actions -> actions
-                            .elements(asElements(
-                                    button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
-                                    button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
+       Pattern pattern = Pattern.compile("[a-zA-Z ]*", Pattern.CASE_INSENSITIVE);
+        app.message(pattern, (payload, ctx) -> {
+                    ctx.say(asBlocks(
+                            section(section -> section.text(markdownText("Hello! :wave: I am your virtual assistant thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
+                            divider(),
+                            actions(actions -> actions
+                                    .elements(asElements(
+                                            button(b -> b.actionId("REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("Member Service REST")),
+                                            button(b -> b.actionId("SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("Card Service SOAP"))
 
-                            ))
-                    )
-            )));
-            return ctx.ack();
+                                    ))
+                            ),
+                            section(section -> section.text(markdownText("To Onboard new Service please click on below button :point_down:"))),
+                            divider(),
+                            actions(actions -> actions
+                                    .elements(asElements(
+                                            button(b -> b.actionId("Onboard").style("primary").text(plainText(pt -> pt.text("Onboard"))).value("onboard"))
+
+                                    ))
+                            )
+                    ));
+
+                    return ctx.ack();
         });
 
-        app.blockAction("Card Service SOAP", (req, ctx) -> {
+       app.blockAction("REST", (req, ctx) -> {
+           if (req.getPayload().getResponseUrl() != null) {
+                   StaticSelectElement selectREST = StaticSelectElement.builder()
+                           .placeholder(plainText("Select an option"))
+                           .actionId("Member Service REST")
+                           .options(Arrays.asList(
+                                   option(plainText("Endpoint URL"), "Endpoint URL"),
+                                   option(plainText("Jenkins Job"), "Jenkins Job"),
+                                   option(plainText("Github URL"), "Github URL"),
+                                   option(plainText("Confluence link"), "Confluence link"),
+                                   option(plainText("KT Recordings"), "KT Recordings")
+                           )).build();
+                   ctx.respond(res -> res
+                           .responseType("in_channel")
+                           .blocks(asBlocks(
+                                   section(section -> section.text(markdownText("What do you want to know about Member Service REST. Please select from one of the options" + "\n"))),
+                                   divider(),
+                                   actions(actions -> actions
+                                           .elements(asElements(selectREST))
+                                   )
+                           )));
+
+               }
+           return ctx.ack();
+       });
+
+       app.blockAction("SOAP", (req, ctx) -> {
+           if (req.getPayload().getResponseUrl() != null) {
+               StaticSelectElement selectREST = StaticSelectElement.builder()
+                       .placeholder(plainText("Select an option"))
+                       .actionId("Member Service REST")
+                       .options(Arrays.asList(
+                               option(plainText("Endpoint URL"), "Endpoint URL"),
+                               option(plainText("Jenkins Job"), "Jenkins Job"),
+                               option(plainText("Github URL"), "Github URL"),
+                               option(plainText("Confluence link"), "Confluence link"),
+                               option(plainText("KT Recordings"), "KT Recordings")
+                       )).build();
+               ctx.respond(res -> res
+                       .responseType("in_channel")
+                       .blocks(asBlocks(
+                               section(section -> section.text(markdownText("What do you want to know about Member Service SOAP. Please select from one of the options" + "\n"))),
+                               divider(),
+                               actions(actions -> actions
+                                       .elements(asElements(selectREST))
+                               )
+                       )));
+
+           }
+           return ctx.ack();
+       });
+
+       /*Pattern pattern1 = Pattern.compile("[a-zA-Z ]*", Pattern.CASE_INSENSITIVE);
+       app.message(pattern1, (payload, ctx) -> {
+           StaticSelectElement select = StaticSelectElement.builder()
+                   .placeholder(plainText("Select an option"))
+                   .actionId("select_option")
+                   .options(Arrays.asList(
+                           option(plainText("Member Service REST"), "Member Service REST"),
+                           option(plainText("Card Service SOAP"), "Card Service SOAP")
+                   )).build();
+           ctx.say(asBlocks(
+                   section(section -> section.text(markdownText("Hello! :wave: I am your virtual assistant thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
+                   divider(),
+                   actions(actions -> actions
+                           .elements(asElements(select))
+                   ),
+                   section(section -> section.text(markdownText("To Onboard new Service please click on below button :point_down:"))),
+                   divider(),
+                   actions(actions -> actions
+                           .elements(asElements(
+                                   button(b -> b.actionId("Onboard").style("primary").text(plainText(pt -> pt.text("Onboard"))).value("onboard"))
+
+                           ))
+                   )
+           ));
+
+           return ctx.ack();
+       });
+*/
+     /*  app.blockAction("select_option", (req, ctx) -> {
+           String selectedOption = req.getPayload().getActions().get(0).getSelectedOption().getValue();
+           if (req.getPayload().getResponseUrl() != null) {
+               switch (selectedOption) {
+                   case "Member Service REST":
+                       StaticSelectElement selectREST = StaticSelectElement.builder()
+                               .placeholder(plainText("Select an option"))
+                               .actionId("Member Service REST")
+                               .options(Arrays.asList(
+                                       option(plainText("Endpoint URL"), "Endpoint URL"),
+                                       option(plainText("Jenkins Job"), "Jenkins Job"),
+                                       option(plainText("Github URL"), "Github URL"),
+                                       option(plainText("Confluence link"), "Confluence link"),
+                                       option(plainText("KT Recordings"), "KT Recordings"),
+                                       option(plainText("Swagger Links"), "Swagger Links")
+                               )).build();
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("What do you want to know about Member Service REST. Please select from one of the options" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(selectREST))
+                                       )
+                               )));
+                   break;
+                   case "Card Service SOAP":
+                       StaticSelectElement selectSOAP = StaticSelectElement.builder()
+                               .placeholder(plainText("Select an option"))
+                               .actionId("Card Service SOAP")
+                               .options(Arrays.asList(
+                                       option(plainText("Endpoint URL"), "Endpoint URL SOAP"),
+                                       option(plainText("Jenkins Job"), "Jenkins Job SOAP"),
+                                       option(plainText("Github URL"), "Github URL SOAP"),
+                                       option(plainText("Confluence link"), "Confluence link SOAP"),
+                                       option(plainText("KT Recordings"), "KT Recordings SOAP"),
+                                       option(plainText("Swagger Links"), "Swagger Links SOAP")
+                               )).build();
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("What do you want to know about Card Service SOAP. Please select from one of the options" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(selectSOAP))
+                                       )
+                               )));
+                       break;
+                   default:
+                       ctx.respond("invalid selection");
+               }
+           }
+
+           return ctx.ack();
+       });
+*/
+       app.blockAction("Member Service REST", (req, ctx) -> {
+           String value = req.getPayload().getActions().get(0).getSelectedOption().getValue();
+           if (req.getPayload().getResponseUrl() != null) {
+               switch (value) {
+                   case "Endpoint URL":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the endpoint URL for Card Service REST" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("REST").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Jenkins Job":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Jenkins job for Member Service REST" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_REST").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Github URL":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Github links for Member Service REST" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_REST").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Confluence link":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Confluence links for Member Service REST" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_REST").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "KT Recordings":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the KT Recordings for Member Service REST" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_REST").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Swagger Links":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Swagger links for Member Service REST" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_REST").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+                       break;
+                   case "Card Service SOAP":
+                       StaticSelectElement selectSOAP = StaticSelectElement.builder()
+                               .placeholder(plainText("Select an option"))
+                               .actionId("Card Service SOAP")
+                               .options(Arrays.asList(
+                                       option(plainText("Endpoint URL"), "Endpoint URL SOAP"),
+                                       option(plainText("Jenkins Job"), "Jenkins Job SOAP"),
+                                       option(plainText("Github URL"), "Github URL SOAP"),
+                                       option(plainText("Confluence link"), "Confluence link SOAP"),
+                                       option(plainText("KT Recordings"), "KT Recordings SOAP"),
+                                       option(plainText("Swagger Links"), "Swagger Links SOAP")
+                               )).build();
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("What do you want to know about Card Service SOAP. Please select from one of the options" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(selectSOAP))
+                                       )
+                               )));
+                       break;
+                   default:
+                       ctx.respond("invalid selection");
+               }
+           }
+
+           return ctx.ack();
+       });
+
+       app.blockAction("Card Service SOAP", (req, ctx) -> {
+           String value = req.getPayload().getActions().get(0).getSelectedOption().getValue();
+           if (req.getPayload().getResponseUrl() != null) {
+               switch (value) {
+                   case "Endpoint URL SOAP":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the endpoint URL for Card Service SOAP" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_SOAP").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Jenkins Job SOAP":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Jenkins job for Member Service SOAP" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_SOAP").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Github URL SOAP":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Github links for Member Service SOAP" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_SOAP").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Confluence link SOAP":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Confluence links for Member Service SOAP" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_SOAP").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "KT Recordings SOAP":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the KT Recordings for Member Service SOAP" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_SOAP").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+
+                       break;
+                   case "Swagger Links SOAP":
+                       ctx.respond(res -> res
+                               .responseType("in_channel")
+                               .blocks(asBlocks(
+                                       section(section -> section.text(markdownText("Please find the Swagger links for Member Service SOAP" + "\n" + value))),
+                                       divider(),
+                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
+                                       divider(),
+                                       actions(actions -> actions
+                                               .elements(asElements(
+                                                       button(b -> b.actionId("YES_SOAP").style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                       button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
+
+                                               ))
+                                       )
+                               )));
+                       break;
+                   case "Member Service REST":
+                   StaticSelectElement selectREST = StaticSelectElement.builder()
+                           .placeholder(plainText("Select an option"))
+                           .actionId("Member Service REST")
+                           .options(Arrays.asList(
+                                   option(plainText("Endpoint URL"), "Endpoint URL"),
+                                   option(plainText("Jenkins Job"), "Jenkins Job"),
+                                   option(plainText("Github URL"), "Github URL"),
+                                   option(plainText("Confluence link"), "Confluence link"),
+                                   option(plainText("KT Recordings"), "KT Recordings"),
+                                   option(plainText("Swagger Links"), "Swagger Links")
+                           )).build();
+                   ctx.respond(res -> res
+                           .responseType("in_channel")
+                           .blocks(asBlocks(
+                                   section(section -> section.text(markdownText("What do you want to know about Member Service REST. Please select from one of the options" + "\n"))),
+                                   divider(),
+                                   actions(actions -> actions
+                                           .elements(asElements(selectREST))
+                                   )
+                           )));
+                   default:
+                       ctx.respond("invalid selection");
+               }
+           }
+
+           return ctx.ack();
+       });
+
+       /*app.blockAction("Card Service SOAP", (req, ctx) -> {
            String value = req.getPayload().getActions().get(0).getValue();
            if (req.getPayload().getResponseUrl() != null) {
                ctx.respond(res -> res
@@ -119,7 +493,7 @@ public class SlackApp {
                        divider(),
                        actions(actions -> actions
                                .elements(asElements(
-                                       button(b -> b.actionId("Endpoint URL SOAP").style("primary").text(plainText(pt -> pt.text("Endpoint URL"))).value("https://endpointurl1.com/CS" + "\n" + "https://endpointurl2.com/CS" + "\n" + "https://endpointurl3.com/CS" + "\n" + "https://endpointurl4.com/CS")),
+                                       button(b -> b.actionId("Endpoint URL SOAP").style("primary").text(plainText(pt -> pt.text("Endpoint URL"))).value("\bEndpoint URL: " + "https://endpointurl1.com/CS" + "\n" + "\b Endpoint URL2: " + "https://endpointurl2.com/CS" + "\n" + "https://endpointurl3.com/CS" + "\n" + "https://endpointurl4.com/CS")),
                                        button(b -> b.actionId("Jenkins Job SOAP").style("primary").text(plainText(pt -> pt.text("Jenkins"))).value("http://jenkinsjob1.com/CS" + "\n" + "http://jenkinsjob2.com/CS" + "\n" + "http://jenkinsjob3.com/CS" + "\n" + "http://jenkinsjob4.com/CS")),
                                        button(b -> b.actionId("Github URL SOAP").style("primary").text(plainText(pt -> pt.text("Github URL"))).value("https://githuburl1.com/CS" + "\n" + "https://githuburl2.com/CS" + "\n" + "https://githuburl3.com/CS" + "\n" + "https://githuburl4.com/CS")),
                                        button(b -> b.actionId("Confluence link SOAP").style("primary").text(plainText(pt -> pt.text("Confluence Link"))).value("https://confluence1.com/CS" + "\n" + "https://confluence2.com/CS" + "\n" + "https://confluence3.com/CS" + "\n" + "https://confluence4.com/CS")),
@@ -153,9 +527,9 @@ public class SlackApp {
                )));
            }
            return ctx.ack();
-       });
+       });*/
 
-       app.blockAction("Endpoint URL SOAP", (req, ctx) -> {
+     /*  app.blockAction("Endpoint URL SOAP", (req, ctx) -> {
            String value = req.getPayload().getActions().get(0).getValue();
            if (req.getPayload().getResponseUrl() != null) {
                ctx.respond(res -> res
@@ -418,23 +792,35 @@ public class SlackApp {
                        )));
            }
            return ctx.ack();
-       });
+       });*/
 
 
-       app.blockAction("NO", (req, ctx) -> {
+       /*app.blockAction("NO", (req, ctx) -> {
            String value = req.getPayload().getActions().get(0).getValue();
            if (req.getPayload().getResponseUrl() != null) {
+               StaticSelectElement select = StaticSelectElement.builder()
+                       .placeholder(plainText("Select an option"))
+                       .actionId("select_option")
+                       .options(Arrays.asList(
+                               option(plainText("Member Service REST"), "Member Service REST"),
+                               option(plainText("Card Service SOAP"), "Card Service SOAP")
+                       )).build();
                ctx.respond(res -> res
                        .responseType("in_channel")
                        .blocks(asBlocks(
-                               section(section -> section.text(markdownText("GoodBye :wave: Hope you have a wonderful day!!")))
+                               section(section -> section.text(markdownText("Goodbye !! :wave: If you wish to revisit services please select from the dropdown below :"))),
+                               divider(),
+                               actions(actions -> actions
+                                       .elements(asElements(select))
+                               )
                        ))
+
                );
            }
            return ctx.ack();
-       });
+       });*/
 
-       app.blockAction("YES_SOAP", (req, ctx) -> {
+       /*app.blockAction("YES_SOAP", (req, ctx) -> {
            String value = req.getPayload().getActions().get(0).getValue();
            if (req.getPayload().getResponseUrl() != null) {
                ctx.respond(res -> res
@@ -478,6 +864,83 @@ public class SlackApp {
                                        ))
                                )
                        )));
+           }
+           return ctx.ack();
+       });
+*/
+       app.blockAction("NO", (req, ctx) -> {
+           if (req.getPayload().getResponseUrl() != null) {
+               ctx.respond(res -> res
+                       .responseType("in_channel")
+                       .blocks(asBlocks(
+                               section(section -> section.text(markdownText("Goodbye !! :wave: If you wish to revisit services please click on below button :"))),
+                               divider(),
+                               actions(actions -> actions
+                                       .elements(asElements(
+                                               button(b -> b.actionId("REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("Member Service REST")),
+                                               button(b -> b.actionId("SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("Card Service SOAP"))
+                                       ))
+                               )
+                       ))
+
+               );
+           }
+           return ctx.ack();
+       });
+
+       app.blockAction("YES_SOAP", (req, ctx) -> {
+           String value = req.getPayload().getActions().get(0).getValue();
+           if (req.getPayload().getResponseUrl() != null) {
+               if (value.equals("YES")) {
+                   StaticSelectElement selectSOAP = StaticSelectElement.builder()
+                           .placeholder(plainText("Select an option"))
+                           .actionId("Card Service SOAP")
+                           .options(Arrays.asList(
+                                   option(plainText("Endpoint URL"), "Endpoint URL SOAP"),
+                                   option(plainText("Jenkins Job"), "Jenkins Job SOAP"),
+                                   option(plainText("Github URL"), "Github URL SOAP"),
+                                   option(plainText("Confluence link"), "Confluence link SOAP"),
+                                   option(plainText("KT Recordings"), "KT Recordings SOAP"),
+                                   option(plainText("Swagger Links"), "Swagger Links SOAP")
+                           )).build();
+                   ctx.respond(res -> res
+                           .responseType("in_channel")
+                           .blocks(asBlocks(
+                                   section(section -> section.text(markdownText("What do you want to know about Card Service SOAP. Please select from one of the options" + "\n"))),
+                                   divider(),
+                                   actions(actions -> actions
+                                           .elements(asElements(selectSOAP))
+                                   )
+                           )));
+               }
+           }
+           return ctx.ack();
+       });
+
+       app.blockAction("YES_REST", (req, ctx) -> {
+           String value = req.getPayload().getActions().get(0).getValue();
+           if (req.getPayload().getResponseUrl() != null) {
+               if (value.equals("YES")) {
+                   StaticSelectElement selectREST = StaticSelectElement.builder()
+                           .placeholder(plainText("Select an option"))
+                           .actionId("Member Service REST")
+                           .options(Arrays.asList(
+                                   option(plainText("Endpoint URL"), "Endpoint URL"),
+                                   option(plainText("Jenkins Job"), "Jenkins Job"),
+                                   option(plainText("Github URL"), "Github URL"),
+                                   option(plainText("Confluence link"), "Confluence link"),
+                                   option(plainText("KT Recordings"), "KT Recordings")
+                           )).build();
+                   ctx.respond(res -> res
+                           .responseType("in_channel")
+                           .blocks(asBlocks(
+                                   section(section -> section.text(markdownText("What do you want to know about Member Service REST. Please select from one of the options" + "\n"))),
+                                   divider(),
+                                   actions(actions -> actions
+                                           .elements(asElements(selectREST))
+                                   )
+                           )));
+               }
            }
            return ctx.ack();
        });
