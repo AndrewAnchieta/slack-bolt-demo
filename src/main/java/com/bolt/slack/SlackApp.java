@@ -94,15 +94,15 @@ public class SlackApp {
 
        app.blockAction("SOAP", (req, ctx) -> {
            if (req.getPayload().getResponseUrl() != null) {
-               StaticSelectElement selectREST = StaticSelectElement.builder()
+               StaticSelectElement selectSOAP = StaticSelectElement.builder()
                        .placeholder(plainText("Select an option"))
-                       .actionId("Member Service REST")
+                       .actionId("Card Service SOAP")
                        .options(Arrays.asList(
-                               option(plainText("Endpoint URL"), "Endpoint URL"),
-                               option(plainText("Jenkins Job"), "Jenkins Job"),
-                               option(plainText("Github URL"), "Github URL"),
-                               option(plainText("Confluence link"), "Confluence link"),
-                               option(plainText("KT Recordings"), "KT Recordings")
+                               option(plainText("Endpoint URL"), "Endpoint URL SOAP"),
+                               option(plainText("Jenkins Job"), "Jenkins Job SOAP"),
+                               option(plainText("Github URL"), "Github URL SOAP"),
+                               option(plainText("Confluence link"), "Confluence link SOAP"),
+                               option(plainText("KT Recordings"), "KT Recordings SOAP")
                        )).build();
                ctx.respond(res -> res
                        .responseType("in_channel")
@@ -110,7 +110,7 @@ public class SlackApp {
                                section(section -> section.text(markdownText("What do you want to know about Member Service SOAP. Please select from one of the options" + "\n"))),
                                divider(),
                                actions(actions -> actions
-                                       .elements(asElements(selectREST))
+                                       .elements(asElements(selectSOAP))
                                )
                        )));
 
@@ -313,7 +313,7 @@ public class SlackApp {
                                        )
                                )));
                        break;
-                   case "Card Service SOAP":
+                   /*case "Card Service SOAP":
                        StaticSelectElement selectSOAP = StaticSelectElement.builder()
                                .placeholder(plainText("Select an option"))
                                .actionId("Card Service SOAP")
@@ -334,7 +334,7 @@ public class SlackApp {
                                                .elements(asElements(selectSOAP))
                                        )
                                )));
-                       break;
+                       break;*/
                    default:
                        ctx.respond("invalid selection");
                }
@@ -454,7 +454,7 @@ public class SlackApp {
                                        )
                                )));
                        break;
-                   case "Member Service REST":
+                   /*case "Member Service REST":
                    StaticSelectElement selectREST = StaticSelectElement.builder()
                            .placeholder(plainText("Select an option"))
                            .actionId("Member Service REST")
@@ -474,7 +474,7 @@ public class SlackApp {
                                    actions(actions -> actions
                                            .elements(asElements(selectREST))
                                    )
-                           )));
+                           )));*/
                    default:
                        ctx.respond("invalid selection");
                }
