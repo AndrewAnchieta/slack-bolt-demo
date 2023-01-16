@@ -3,16 +3,17 @@ package com.bolt.slack;
 import com.slack.api.bolt.App;
 import com.slack.api.bolt.AppConfig;
 import com.slack.api.bolt.socket_mode.SocketModeApp;
+import com.slack.api.model.block.ActionsBlock;
 import com.slack.api.model.block.element.StaticSelectElement;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import static com.slack.api.model.block.Blocks.*;
 import static com.slack.api.model.block.composition.BlockCompositions.*;
 import static com.slack.api.model.block.element.BlockElements.*;
-
+import static com.slack.api.model.view.Views.*;
+import com.slack.api.model.view.View;
 
 
 @Configuration
