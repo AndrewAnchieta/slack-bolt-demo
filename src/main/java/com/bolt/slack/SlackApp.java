@@ -3,6 +3,9 @@ package com.bolt.slack;
 
 import com.slack.api.bolt.App;
 import com.slack.api.bolt.AppConfig;
+import com.slack.api.bolt.context.builtin.ActionContext;
+import com.slack.api.bolt.jetty.SlackAppServer;
+import com.slack.api.bolt.request.builtin.BlockActionRequest;
 import com.slack.api.bolt.socket_mode.SocketModeApp;
 import com.slack.api.methods.response.chat.ChatPostMessageResponse;
 import com.slack.api.model.block.ActionsBlock;
@@ -10,7 +13,10 @@ import com.slack.api.model.block.element.StaticSelectElement;
 import com.slack.api.model.view.ViewState;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import static com.slack.api.model.block.Blocks.*;
 import static com.slack.api.model.block.composition.BlockCompositions.*;
@@ -32,14 +38,10 @@ public class SlackApp {
            ctx.respond(res -> res
                    .responseType("in_channel")
                    .blocks(asBlocks(
-                           section(section -> section.text(markdownText("Hello "+ req.getPayload().getUserName() + " :wave: Thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
+                           section(section -> section.text(markdownText("Hello " + req.getPayload().getUserName() + " :wave: Thanks for reaching out to me. I got all you need about Digital Enterprise Service. Please Select the one you want to inquire for."))),
                            divider(),
                            actions(actions -> actions
-                                   .elements(asElements(
-                                           button(b -> b.actionId("Member Service REST").style("primary").text(plainText(pt -> pt.text("Member Service REST"))).value("rest")),
-                                           button(b -> b.actionId("Card Service SOAP").style("primary").text(plainText(pt -> pt.text("Card Service SOAP"))).value("soap"))
-
-                                   ))
+                                   .elements(asElements(getStaticSelectElementService()))
                            )
                    )));
            return ctx.ack();
@@ -142,6 +144,7 @@ public class SlackApp {
        });
 
        app.blockAction("SOAP", (req, ctx) -> {
+
            if (req.getPayload().getResponseUrl() != null) {
                StaticSelectElement selectSOAP = getStaticSelectElementSOAP();
                ctx.respond(res -> res
@@ -243,88 +246,16 @@ public class SlackApp {
            return ctx.ack();
        });
 
-       app.blockAction("Card Service SOAP", (req, ctx) -> {
+       AtomicReference<String> string = new AtomicReference<>("");
+
+       app.blockAction("Member Service", (req, ctx) -> {
+           string.set("teSt");
+           System.out.println(string.toString().substring(string.toString().length() - 2));
            String value = req.getPayload().getActions().get(0).getSelectedOption().getValue();
-           if (req.getPayload().getResponseUrl() != null) {
-               switch (value) {
-                   case "Endpoint URL SOAP":
-                       ctx.respond(res -> res
-                               .responseType("in_channel")
-                               .blocks(asBlocks(
-                                       section(section -> section.text(markdownText("Please find the endpoint URL for Card Service SOAP" + "\n" + value))),
-                                       divider(),
-                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
-                                       divider(),
-                                       getSoapActions()
-                               )));
-
-                       break;
-                   case "Jenkins Job SOAP":
-                       ctx.respond(res -> res
-                               .responseType("in_channel")
-                               .blocks(asBlocks(
-                                       section(section -> section.text(markdownText("Please find the Jenkins job for Member Service SOAP" + "\n" + value))),
-                                       divider(),
-                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
-                                       divider(),
-                                       getSoapActions()
-                               )));
-
-                       break;
-                   case "Github URL SOAP":
-                       ctx.respond(res -> res
-                               .responseType("in_channel")
-                               .blocks(asBlocks(
-                                       section(section -> section.text(markdownText("Please find the Github links for Member Service SOAP" + "\n" + value))),
-                                       divider(),
-                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
-                                       divider(),
-                                       getSoapActions()
-                               )));
-
-                       break;
-                   case "Confluence link SOAP":
-                       ctx.respond(res -> res
-                               .responseType("in_channel")
-                               .blocks(asBlocks(
-                                       section(section -> section.text(markdownText("Please find the Confluence links for Member Service SOAP" + "\n" + value))),
-                                       divider(),
-                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
-                                       divider(),
-                                       getSoapActions()
-                               )));
-
-                       break;
-                   case "KT Recordings SOAP":
-                       ctx.respond(res -> res
-                               .responseType("in_channel")
-                               .blocks(asBlocks(
-                                       section(section -> section.text(markdownText("Please find the KT Recordings for Member Service SOAP" + "\n" + value))),
-                                       divider(),
-                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
-                                       divider(),
-                                       getSoapActions()
-                               )));
-
-                       break;
-                   case "Swagger Links SOAP":
-                       ctx.respond(res -> res
-                               .responseType("in_channel")
-                               .blocks(asBlocks(
-                                       section(section -> section.text(markdownText("Please find the Swagger links for Member Service SOAP" + "\n" + value))),
-                                       divider(),
-                                       section(section -> section.text(markdownText("Do you want to know anything else about this service" + "\n"))),
-                                       divider(),
-                                       getSoapActions()
-                               )));
-                       break;
-                   default:
-                       ctx.respond("invalid selection");
-               }
-           }
-
+           blockActionFun(req, ctx, value);
            return ctx.ack();
        });
+       System.out.println(string);
 
        app.blockAction("NO", (req, ctx) -> {
            if (req.getPayload().getResponseUrl() != null) {
@@ -384,8 +315,22 @@ public class SlackApp {
            return ctx.ack();
        });
 
-       new SocketModeApp(app).start();
+       new SlackAppServer(app).start();
         return app;
+    }
+
+    private void blockActionFun(BlockActionRequest req, ActionContext ctx, String value) throws IOException {
+        if (req.getPayload().getResponseUrl() != null) {
+            ctx.respond(res -> res
+                    .responseType("in_channel")
+                    .blocks(asBlocks(
+                            section(section -> section.text(markdownText("Please find the endpoint URL for "+value+"\n"))),
+                            divider(),
+                            section(section -> section.text(markdownText("Do you want to know anything else about this service\n"))),
+                            divider(),
+                            getSoapActions()
+                    )));
+        }
     }
 
 
@@ -409,12 +354,22 @@ public class SlackApp {
                 .actionId("Member Service REST")
                 .options(Arrays.asList(
                         option(plainText("Endpoint URL"), "Endpoint URL"),
-                        option(plainText("Jenkins Job"), "Jenkins Job"),
+                        option(plainText("Jenkins URL"), "Jenkins Job"),
                         option(plainText("Github URL"), "Github URL"),
                         option(plainText("Confluence link"), "Confluence link"),
                         option(plainText("KT Recordings"), "KT Recordings")
                 )).build();
         return selectREST;
+    }
+
+    private StaticSelectElement getStaticSelectElementService() {
+        return StaticSelectElement.builder()
+                .placeholder(plainText("Select an option"))
+                .actionId("Member Service")
+                .options(Arrays.asList(
+                        option(plainText("Member Service REST"), "Member Service REST"),
+                        option(plainText("Card Service SOAP"), "Card Service SOAP")
+                )).build();
     }
 
     private ActionsBlock getSoapActions() {
