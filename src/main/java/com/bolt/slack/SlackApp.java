@@ -16,7 +16,7 @@ import static com.slack.api.model.block.element.BlockElements.*;
 
 @Configuration
 public class SlackApp {
-    private final String[] services = {"REST", "SOAP", "Other"};
+    private final String[] services = {"Member Service REST", "Member Service SOAP", "Other"};
     private final String[] categories = {"Endpoint URL", "Jenkins Job", "Github URL", "Confluence Link", "KT Recordings"};
 
     @Bean
@@ -31,7 +31,7 @@ public class SlackApp {
             ctx.respond(res -> res
                     .responseType("in_channel")
                     .blocks(asBlocks(
-                            section(section -> section.text(markdownText("Hello "+ req.getPayload().getUserName() + "! :wave: Thanks for reaching out to me. I got all you need about Digital Core Service. Please Select the one you want to inquire for."))),
+                            section(section -> section.text(markdownText("Hello " + req.getPayload().getUserName() + "! :wave: Thanks for reaching out to me. I got all you need about Digital Core Service. Please Select the one you want to inquire for."))),
                             divider(),
                             actions(actions -> actions
                                     .elements(asElements(getStaticSelectElementService()))
@@ -60,71 +60,16 @@ public class SlackApp {
             return ctx.ack();
         });
 
-//        app.blockAction ("Onboard", (req, ctx) -> {
-//            if (req.getPayLoad().getResponseUrt() != null) {
-//                Vlew view = getModalView();
-//                app.client().vlewsOpen (r -> r
-//                        .triggerId(req.getPayload().getTriggerId())
-//                        .view(view));
-//            }
-//            return ctx.ack();
-//        });
-
-        // app.viewSubmission("new-Onboarding", (req, ct) -> {
-        // String channel = "DO3SVPONXRR";
-        // Map<String, Map<String, ViewState. Value>> stateValues = req. getPayload() . getView() • getState() • getValues();
-        // String title = stateValues. get ("Service-Name"). get ('Service-Name"). getValue();
-        // String serviceName = stateValues. get ("Service-Name"). get ("Service-Name") •getValue();
-        // String endpointURL = stateValues. get ("Endpoint-URL"). get ("Endpoint-URL") .getValue ();
-        // String jenkinsJob = stateValues.get ("Jenkins-Job") .get ("Jenkins-Job").getValue();
-        // String githubURL = stateValues.get("Github-URL"). get ("Github-URL"). getValue);
-        // String confluenceLinks = stateValues. get ("Confluence-Links").get("Confluence-links") •getValue);
-        // String ktRecordings = stateValues. get ("KT-Recordings") .get ("KT-Recordings") • getValue);
-        // Map<String, String> errors = new HashMap<>0);
-        // if (serviceName. length <= 1) {
-        // errors.put("agenda-block", "Agenda needs to be longer than 10 characters.");
-        // A9 A3 43 1
-        // }
-        // if (lerrors. isEmpty0) {
-        // return ctx.ack(r -> r.responseAction("errors") .errors(errors));
-        // ] else {
-        // //TODO confluenceService.postConfluenceApi(title,serviceName,endpointURL,jenkinsJob,githubURL,confluenceLinks,ktRecordings)
-        // ChatPostMessageResponse postMessageResponse = ct.client .chatPostMessage (r -> r
-        // •channel (channel.)
-        // •text ("Your service has been successfully onboarded! The service name is:
-        // " + serviceName)
-        // .blocks(asBlocks
-        // section (section -> section.text (markdownText ("Your application has been successfully onboarded!
-        // :partying_face:"))), dividerO,
-        // actions (actions -> actions
-        // .elements (asElements
-        // button(b -> b.actionId("REST") .style("primary") .textplainText(pt -> pt.text("Member
-        // Service REST")))),
-        // button(b -> b.actionId("SOAP") .style("primary") .text plainText (pt -> pt.text("Member
-        // Service SOAP")))),
-        // button(b -> b.actionId (serviceName) .style("primary") .text (plainText(pt -> pt.text (serviceNlame))))
-        // ))
-        // )));
-        // if (postMessageResponse.is0k()) {
-        // System.out .printin("Successfully sent message to channel:
-        // " + channel);
-        // } else {
-        // System.out.println("Error sending message to channel:
-        // " + postMessageResponse.getError));
-        // }
-        // 子
-        // return ctx.ack0;
-
-        app.blockAction("Member Service", (req, ctx) -> {
+        app.blockAction("Service Catalog", (req, ctx) -> {
             if (req.getPayload().getResponseUrl() != null) {
-                String actionId = req.getPayload().getActions().get(0).getSelectedOption().getValue();
+                String service = req.getPayload().getActions().get(0).getSelectedOption().getValue();
                 ctx.respond(res -> res
                         .responseType("in_channel")
                         .blocks(asBlocks(
-                                section(section -> section.text(markdownText("What do you want to know about Member Service " + actionId + "? Please select from one of the options" + "\n"))),
+                                section(section -> section.text(markdownText("What do you want to know about " + service + "? Please select from one of the options" + "\n"))),
                                 divider(),
-                                actions (actions -> actions
-                                        .elements(asElements(getStaticSelectElementCategory(actionId)))
+                                actions(actions -> actions
+                                        .elements(asElements(getStaticSelectElementCategory(service)))
                                 )
                         )));
             }
@@ -132,22 +77,20 @@ public class SlackApp {
         });
 
         app.blockAction("Get Info", (req, ctx) -> {
-            String value = req.getPayload().getActions().get(0).getSelectedOption().getValue();
-            String[] services = value.split(" ");
-            String service = services[services.length - 1];
+            String[] value = req.getPayload().getActions().get(0).getSelectedOption().getValue().split("::");
+//            String service = value.substring(value.lastIndexOf("- ") + 2);
             if (req.getPayload().getResponseUrl() != null) {
                 ctx.respond(res -> res
                         .responseType("in_channel")
                         .blocks(asBlocks(
-                                //FIXME String value and pageContent value do not match
-                                section(section -> section.text(markdownText(value + ":\n"))),
+                                section(section -> section.text(markdownText("Here is the " + value[0] + " information for " + value[1] + ":\n(Insert information here)"))),
                                 // Insert info here
                                 divider(),
                                 section(section -> section.text(markdownText("Do you want to know anything else about this service?" + "\n"))),
                                 divider(),
                                 actions(actions -> actions
                                         .elements(asElements(
-                                                button(b -> b.actionId(service).style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
+                                                button(b -> b.actionId(value[1]).style("primary").text(plainText(pt -> pt.text("YES"))).value("YES")),
                                                 button(b -> b.actionId("NO").style("danger").text(plainText(pt -> pt.text("NO"))).value("NO"))
                                         ))
                                 )
@@ -188,7 +131,7 @@ public class SlackApp {
                         .blocks(asBlocks(
                                 section(section -> section.text(markdownText("What do you want to know about Member Service " + service + "? Please select from one of the options" + "\n"))),
                                 divider(),
-                                actions (actions -> actions
+                                actions(actions -> actions
                                         .elements(asElements(getStaticSelectElementCategory(service)))
                                 )
                         )));
@@ -208,7 +151,7 @@ public class SlackApp {
     private List<OptionObject> categoryList(String service) {
         List<OptionObject> categoryList = new ArrayList<>();
         for (String s : categories) {
-            categoryList.add(option(plainText(s), s + " " + service));
+            categoryList.add(option(plainText(s), s + "::" + service));
         }
         return categoryList;
     }
@@ -216,7 +159,7 @@ public class SlackApp {
     private StaticSelectElement getStaticSelectElementService() {
         return StaticSelectElement.builder()
                 .placeholder(plainText("Select an option"))
-                .actionId("Member Service")
+                .actionId("Service Catalog")
                 .options(serviceList()).build();
     }
 
@@ -226,47 +169,4 @@ public class SlackApp {
                 .actionId("Get Info")
                 .options(categoryList(service)).build();
     }
-
-    // 	private View getModalView()
-    // View view = View.builder()
-    // .callbackId("new-Onboarding")
-    // .type ("modal")
-    // .notifyOnClose (true)
-    // title (viewTitle(title -> title.type("plain_text"). text ("Onboarding New Service") emoji(true)))
-    // .submit (viewSubmit (submit -> submit.type ("plain_text"). text ("Submit").emoji(true)))
-    // •cLose (viewCLose(close -> close. type ("plain_text").text ("Cancel").emoji(true)))
-    // blocks (asBlocks (
-    // input (input -> input
-    // .blockId("Service-Name")
-    // element (plainTextInput(pti->pti.actionId("Service-Name").multiline(true)))
-    // .label (plainText (pt -> pt. text ("Service Name
-    // ") ¿emoji(true)))
-    // ),
-    // input (input -> input
-    // .blockId("Endpoint-URL")
-    // .element (plainTextInput (pti -> pti.actionId("Endpoint-URL") multiline (true)))
-    // •label (plainText(pt -> pt.text("Enter Endpoint URL's : ").emoji(true)))
-    // input (input -> input
-    // .blockId("Jenkins-Job")
-    // •element (plainTextInput(pti-> pti.actionId("Jenkins-Job").multiline(true)))
-    // •label(plainText(pt -> pt. text ("Enter Jenkins Job details: ").emoji(true)))
-    // );
-    // input (input -> input
-    // blockId("Github-URL")
-    // element (plainTextInput(pti-> pti.actionId("Github-URL") .multiline (true)))
-    // •label(plainText(pt -> pt.text("Enter Github URL's : ").emoji(true)))
-    // ),
-    // input (input -> input
-    // .blockId("Confluence-Links")
-    // •eLement (plainTextInput (pti -> ptiactionId("Confluence-Links").multiline(true)))
-    // •Label (plainText(pt -> pt. text ("Enter Confluence pages Links : ").emoji(true)))
-    // ).
-    // input (input -> input
-    // blockId ("KT-Recordings")
-    // .element (plainTextInput (pti -> ptiactionId("KT-Recordings").multiline(true)))
-    // .label(plainText(pt -> pt.text("Enter KT Recordings links
-    // ").emoji(true)))
-    // )
-    // ).buildO;
-    // return view;
 }
