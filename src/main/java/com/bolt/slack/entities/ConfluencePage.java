@@ -10,19 +10,28 @@ public class ConfluencePage {
     private String githubURL;
     private String confluenceLinks;
     private String ktRecordings;
-    private String swaggerLink; //TODO getter and setter
+    private String swaggerLink;
 
-    //TODO create constructor for pageID, title, and rawHTML
     public ConfluencePage() {}
 
-    public ConfluencePage(String title,String serviceName, String endpointURL, String jenkinsJob, String githubURL, String confluenceLinks, String ktRecordings) {
+    public ConfluencePage(String pageId, String title, String rawHtml) {
+        this.pageId = pageId;
         this.title = title;
+        this.rawHtml = rawHtml;
+        scrapeConfluenceHTML();
+    }
+
+    public ConfluencePage(String pageId, String title, String rawHtml, String serviceName, String endpointURL, String jenkinsJob, String githubURL, String confluenceLinks, String ktRecordings, String swaggerLink) {
+        this.pageId = pageId;
+        this.title = title;
+        this.rawHtml = rawHtml;
         this.serviceName = serviceName;
         this.endpointURL = endpointURL;
         this.jenkinsJob = jenkinsJob;
         this.githubURL = githubURL;
         this.confluenceLinks = confluenceLinks;
         this.ktRecordings = ktRecordings;
+        this.swaggerLink = swaggerLink;
     }
 
     public String getPageId() {
@@ -59,6 +68,9 @@ public class ConfluencePage {
 
     public String getKtRecordings() {
         return ktRecordings;
+    }
+    public String getSwaggerLink() {
+        return swaggerLink;
     }
 
     public void setPageId(String pageId) {
@@ -97,7 +109,21 @@ public class ConfluencePage {
         this.ktRecordings = ktRecordings;
     }
 
-    //TODO
+    public void setSwaggerLink(String swaggerLink) {
+        this.swaggerLink = swaggerLink;
+    }
+
+    public String getCategoryInfo(String category) {
+        if (category.equals(Categories.Endpoint_URL.name())) return endpointURL;
+        if (category.equals(Categories.Jenkins_Job.name())) return jenkinsJob;
+        if (category.equals(Categories.Github_URL.name())) return githubURL;
+        if (category.equals(Categories.Confluence_Link.name())) return confluenceLinks;
+        if (category.equals(Categories.KT_Recordings.name())) return ktRecordings;
+        if (category.equals(Categories.Swagger_Link.name())) return swaggerLink;
+        return "";
+    }
+
+    private void scrapeConfluenceHTML() {}
 
     @Override
     public String toString() {
